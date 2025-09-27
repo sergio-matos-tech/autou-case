@@ -30,7 +30,7 @@ def preprocess_text(text: str) -> str:
     text = text.lower()
     # 2. Remove pontuações e caracteres especiais
     # Mantém apenas caracteres alfanuméricos e espaços
-    text = re.sub(r'[^\w\s]', '', text)
+    text = re.sub(r'[^\w\s\n]', '', text)
     # 3. Normaliza espaços (remove múltiplos espaços) e retira bordas
     text = re.sub(r'\s+', ' ', text).strip()
     return text
