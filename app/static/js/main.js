@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const outputSection = document.getElementById('output-section');
     const form = document.getElementById('analysis-form');
     const emailTextInput = document.getElementById('email-text');
+    const btnExemploProdutivo = document.getElementById('btn-exemplo-produtivo');
+    const btnExemploImprodutivo = document.getElementById('btn-exemplo-improdutivo');
     const emailFileInput = document.getElementById('email-file');
     const fileDropArea = document.querySelector('.file-drop-area');
     const fileMsg = document.querySelector('.file-msg');
@@ -27,6 +29,46 @@ document.addEventListener('DOMContentLoaded', () => {
         fileLoader.classList.add('hidden');
         fileMsg.classList.remove('hidden');
     };
+
+    // --- Exemplos de email ---
+    const exemploProdutivo = "Assunto: Solicitação de atualização de ticket\n\nOlá equipe,\nGostaria de saber se há alguma novidade sobre o ticket #12345 referente ao problema de acesso ao sistema. Preciso de uma posição para informar ao cliente.\nObrigado.";
+    const exemploImprodutivo = "Assunto: Bom dia!\n\nOlá pessoal, só passando para desejar uma ótima semana a todos!";
+
+    // --- Exemplos de email via OpenAI ---
+    async function gerarExemplo(tipo) {
+        emailTextInput.disabled = true;
+        btnExemploProdutivo.disabled = true;
+        btnExemploImprodutivo.disabled = true;
+        submitButton.disabled = true;
+        emailTextInput.value = 'Gerando exemplo...';
+        try {
+            const response = await fetch('/generate-example', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tipo })
+            });
+            const data = await response.json();
+            if (data.exemplo) {
+                emailTextInput.value = data.exemplo;
+            } else {
+                emailTextInput.value = 'Não foi possível gerar um exemplo.';
+            }
+        } catch (err) {
+            emailTextInput.value = 'Erro ao gerar exemplo.';
+        } finally {
+            emailTextInput.disabled = false;
+            btnExemploProdutivo.disabled = false;
+            btnExemploImprodutivo.disabled = false;
+            validateInput();
+        }
+    }
+
+    btnExemploProdutivo.addEventListener('click', () => {
+        gerarExemplo('produtivo');
+    });
+    btnExemploImprodutivo.addEventListener('click', () => {
+        gerarExemplo('improdutivo');
+    });
 
     // --- Funções de Controle da UI ---
     const resetFormToIdle = () => {
