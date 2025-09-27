@@ -3,11 +3,11 @@ import json
 import logging
 from dotenv import load_dotenv
 from openai import OpenAI, RateLimitError, APIError
-# Importação de tipo para corrigir o aviso do PyCharm/type checker
+# Importação de tipos do SDK da OpenAI para corrigir o aviso do Pylance
 from openai.types.chat import ChatCompletionMessageParam
 # Importações Pydantic para validação de esquema
-from pydantic import BaseModel, Field, ValidationError
-from typing import Literal
+from pydantic import BaseModel, Field, ValidationError 
+from typing import Literal 
 
 # Configuração básica de logging
 logging.basicConfig(level=logging.INFO)
@@ -15,12 +15,10 @@ logging.basicConfig(level=logging.INFO)
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 
-
 # --- DEFINIÇÃO DO SCHEMA DE RESPOSTA (Pydantic) ---
 class AnalysisResponse(BaseModel):
     """
-    Define o esquema exato do JSON que esperamos da API da OpenAI,
-    garantindo que a categoria seja um valor literal.
+    Define o esquema exato do JSON que esperamos da API da OpenAI.
     """
     category: Literal["Produtivo", "Improdutivo"] = Field(
         ..., description="A classificação do email."
@@ -29,13 +27,10 @@ class AnalysisResponse(BaseModel):
         ..., description="A resposta automática sugerida em português."
     )
 
-
 # --- INICIALIZAÇÃO DO CLIENTE OPENAI ---
-# O 'client' é inicializado fora da função para ser reutilizado
 try:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        # Lança exceção se a chave não for encontrada (erro fatal de ambiente)
         raise ValueError("A chave OPENAI_API_KEY não foi encontrada no arquivo .env")
 
     client = OpenAI(api_key=api_key)
@@ -50,8 +45,7 @@ except Exception as e:
 
 def analyze_email(text: str) -> dict:
     """
-    Usa a API da OpenAI para classificar um email e sugerir uma resposta,
-    garantindo a validação de saída via Pydantic.
+    Usa a API da OpenAI para classificar um email e sugerir uma resposta.
     """
     if not client:
         return {
@@ -65,9 +59,11 @@ def analyze_email(text: str) -> dict:
     1. "category": classifique o email estritamente como "Produtivo" ou "Improdutivo", seguindo as regras abaixo:
 
     * Produtivo: Emails que exigem uma **ação obrigatória**, **resposta específica** ou **mudança de status** para avançar um processo de negócio (ex: solicitações de suporte, aprovações, dúvidas sobre o sistema, status de ticket, requisições de credenciais).
-    * Improdutivo: Emails que **não necessitam de ação** ou **resposta imediata**. Inclui: mensagens de cortesia, agradecimentos simples, **compartilhamento de informações/artigos (FYI)** e spam.
+    * Improdutivo: Emails que **não necessitam de ação** ou **resposta imediata**. Inclui: mensagens de cortesia, parabéns, agradecimentos simples, **compartilhamento de informações/artigos (FYI)** e spam.
 
-    2. "suggested_response": sugira uma **resposta curta, profissional e direcionada ao remetente original** do email, indicando **qual será o próximo passo da nossa equipe** para resolver a questão.
+    2. "suggested_response":
+    - Se o email for "Produtivo", sugira uma resposta curta, profissional e direcionada ao remetente original, indicando qual será o próximo passo da nossa equipe para resolver a questão. Sempre assine como "Equipe AutoU" ou "Equipe de Suporte AutoU".
+    - Se o email for "Improdutivo" (ex: parabéns, cortesia, FYI, agradecimento), responda de forma cordial e sucinta, informando que não é necessária ação adicional ou que a mensagem foi recebida, evitando agradecimentos extensos ou respostas desnecessárias. Sempre assine como "Equipe AutoU" ou "Equipe de Suporte AutoU".
 
     Email para análise:
     ---
@@ -81,23 +77,27 @@ def analyze_email(text: str) -> dict:
          "content": "Você é um assistente eficiente que analisa emails e retorna respostas em formato JSON. Suas respostas sugeridas devem ser **formais, profissionais e sempre direcionadas ao remetente original**, comunicando os próximos passos de forma clara."},
         {"role": "user", "content": prompt}
     ]
-
+    
     response_format_json = {"type": "json_object"}
 
     try:
         logging.info("Enviando requisição para a API da OpenAI...")
-
+        
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=messages_list,
             temperature=0.2,
-            response_format=response_format_json
+            response_format=response_format_json  # type: ignore
         )
 
         json_string = response.choices[0].message.content
-
+        
+        # CORREÇÃO DE TIPAGEM: Garante que json_string não é None antes de validar com Pydantic
+        if json_string is None:
+             raise ValueError("A resposta da API da IA não retornou conteúdo.")
+             
         # Validação Pydantic
-        analysis_data = AnalysisResponse.model_validate_json(json_string)
+        analysis_data = AnalysisResponse.model_validate_json(json_string) 
         logging.info("Resposta validada com sucesso via Pydantic.")
 
         return {
@@ -106,19 +106,19 @@ def analyze_email(text: str) -> dict:
         }
 
     # Tratamento de Exceções Específicas
-    except APIError as e:
-        logging.error(f"Erro na API da OpenAI: {e}")
-        return {
-            "category": "Erro de Serviço",
-            "suggested_response": "Erro de autenticação ou configuração na API de IA. Contate o suporte técnico."
-        }
     except RateLimitError:
         logging.error("Erro de Rate Limit.")
         return {
             "category": "Erro de Serviço",
             "suggested_response": "A API está sobrecarregada ou excedeu o limite de requisições. Tente novamente mais tarde."
         }
-    except (ValidationError, json.JSONDecodeError) as e:
+    except APIError as e:
+        logging.error(f"Erro na API da OpenAI: {e}")
+        return {
+            "category": "Erro de Serviço",
+            "suggested_response": "Erro de autenticação ou configuração na API de IA. Contate o suporte técnico."
+        }
+    except (ValidationError, json.JSONDecodeError, ValueError) as e:
         logging.error(f"Erro de validação Pydantic ou JSON: {e}")
         return {
             "category": "Erro Inesperado",
