@@ -1,5 +1,8 @@
 import os
 import re  # Módulo adicionado para Expressões Regulares (NLP)
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import RSLPStemmer
 from flask import Flask, request, jsonify, render_template
 from app.services.email_analyzer import analyze_email
 import fitz  # A biblioteca PyMuPDF é importada como 'fitz'
@@ -25,15 +28,27 @@ def preprocess_text(text: str) -> str:
     Realiza pré-processamento clássico para padronizar o texto antes de enviar para a IA.
     1. Converte para minúsculas.
     2. Remove pontuações e caracteres especiais, mantendo letras, números e espaços.
+    3. Remove stopwords e aplica stemming.
     """
-    # 1. Converte para minúsculas
+    try:
+        nltk.data.find('corpora/stopwords')
+    except LookupError:
+        nltk.download('stopwords')
+    try:
+        nltk.data.find('stemmers/rslp')
+    except LookupError:
+        nltk.download('rslp')
+
     text = text.lower()
-    # 2. Remove pontuações e caracteres especiais
-    # Mantém apenas caracteres alfanuméricos e espaços
-    text = re.sub(r'[^\w\s\n]', '', text)
-    # 3. Normaliza espaços (remove múltiplos espaços) e retira bordas
+    text = re.sub(r'[^\w\s]', '', text)
     text = re.sub(r'\s+', ' ', text).strip()
-    return text
+
+    tokens = text.split()
+    stop_words = set(stopwords.words('portuguese'))
+    tokens = [t for t in tokens if t not in stop_words]
+    stemmer = RSLPStemmer()
+    tokens = [stemmer.stem(t) for t in tokens]
+    return ' '.join(tokens)
 
 
 @app.route('/')
