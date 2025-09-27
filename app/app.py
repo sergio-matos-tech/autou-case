@@ -6,6 +6,7 @@ from nltk.stem import RSLPStemmer
 from flask import Flask, request, jsonify, render_template
 from app.services.email_analyzer import analyze_email
 import fitz  # A biblioteca PyMuPDF é importada como 'fitz'
+from openai import OpenAI
 
 app = Flask(__name__)
 
@@ -101,6 +102,46 @@ def analyze():
     except Exception as e:
         # Erro interno na chamada da API de IA
         return jsonify({"error": "Ocorreu um erro interno ao processar a solicitação."}), 500
+
+
+client = None  # Inicializa a variável client
+
+@app.route('/generate-example', methods=['POST'])
+def generate_example():
+    data = request.get_json()
+    tipo = data.get('tipo', 'produtivo')
+    if tipo == 'produtivo':
+        prompt = (
+            "Gere um exemplo de email profissional que seria classificado como PRODUTIVO, seguindo as regras: "
+            "* Produtivo: Emails que exigem uma ação obrigatória, resposta específica ou mudança de status para avançar um processo de negócio (ex: solicitações de suporte, aprovações, dúvidas sobre o sistema, status de ticket, requisições de credenciais). "
+            "Inclua um assunto e corpo do email realista, em português. Evite nomes genéricos como 'Fulano'."
+        )
+    else:
+        prompt = (
+            "Gere um exemplo de email profissional que seria classificado como IMPRODUTIVO, seguindo as regras: "
+            "* Improdutivo: Emails que não necessitam de ação ou resposta imediata. Inclui: mensagens de cortesia, parabéns, agradecimentos simples, compartilhamento de informações/artigos (FYI) e spam. "
+            "Inclua um assunto e corpo do email realista, em português. Evite nomes genéricos como 'Fulano'."
+        )
+    try:
+        # Usa o client já inicializado no topo do arquivo
+        global client
+        if not client:
+            api_key = os.getenv("OPENAI_API_KEY")
+            client = OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=300
+        )
+        exemplo = response.choices[0].message.content
+        if exemplo:
+            exemplo = exemplo.strip()
+        else:
+            exemplo = "Não foi possível gerar um exemplo no momento."
+        return jsonify({"exemplo": exemplo}), 200
+    except Exception as e:
+        return jsonify({"error": f"Erro ao gerar exemplo: {e}"}), 500
 
 
 if __name__ == '__main__':
