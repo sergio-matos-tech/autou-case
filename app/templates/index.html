@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoU - Classificador de Emails</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main>
+        <header>
+            <h1>AutoU 🚀</h1>
+            <p>Classificador Inteligente de Emails</p>
+        </header>
+
+        <form id="analysis-form">
+            <label for="email-text">Cole o texto do email abaixo:</label>
+            <textarea id="email-text" rows="10" placeholder="Ex: Olá, gostaria de saber o status do meu pedido..."></textarea>
+
+            <button type="submit">Analisar Email</button>
+        </form>
+
+        <section id="results-container" class="hidden">
+            <h2>Resultado da Análise</h2>
+            <div class="result-item">
+                <h3>Categoria:</h3>
+                <p id="result-category"></p>
+            </div>
+            <div class="result-item">
+                <h3>Resposta Sugerida:</h3>
+                <p id="result-response"></p>
+            </div>
+        </section>
+
+        <div id="loader" class="hidden"></div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+</body>
+</html>
