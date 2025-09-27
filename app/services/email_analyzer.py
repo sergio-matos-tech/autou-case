@@ -2,7 +2,12 @@ import os
 import json
 import logging
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI, RateLimitError, APIError
+# Importação de tipo para corrigir o aviso do PyCharm/type checker
+from openai.types.chat import ChatCompletionMessageParam
+# Importações Pydantic para validação de esquema
+from pydantic import BaseModel, Field, ValidationError
+from typing import Literal
 
 # Configuração básica de logging
 logging.basicConfig(level=logging.INFO)
@@ -10,14 +15,29 @@ logging.basicConfig(level=logging.INFO)
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 
+
+# --- DEFINIÇÃO DO SCHEMA DE RESPOSTA (Pydantic) ---
+class AnalysisResponse(BaseModel):
+    """
+    Define o esquema exato do JSON que esperamos da API da OpenAI,
+    garantindo que a categoria seja um valor literal.
+    """
+    category: Literal["Produtivo", "Improdutivo"] = Field(
+        ..., description="A classificação do email."
+    )
+    suggested_response: str = Field(
+        ..., description="A resposta automática sugerida em português."
+    )
+
+
 # --- INICIALIZAÇÃO DO CLIENTE OPENAI ---
+# O 'client' é inicializado fora da função para ser reutilizado
 try:
-    # Pega a chave da API das variáveis de ambiente
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
+        # Lança exceção se a chave não for encontrada (erro fatal de ambiente)
         raise ValueError("A chave OPENAI_API_KEY não foi encontrada no arquivo .env")
 
-    # Cria o cliente que usaremos para fazer as chamadas
     client = OpenAI(api_key=api_key)
     logging.info("Cliente OpenAI inicializado com sucesso.")
 
@@ -30,13 +50,8 @@ except Exception as e:
 
 def analyze_email(text: str) -> dict:
     """
-    Usa a API da OpenAI para classificar um email e sugerir uma resposta.
-
-    Args:
-        text: O conteúdo do email a ser analisado.
-
-    Returns:
-        Um dicionário contendo a categoria e a resposta sugerida.
+    Usa a API da OpenAI para classificar um email e sugerir uma resposta,
+    garantindo a validação de saída via Pydantic.
     """
     if not client:
         return {
@@ -44,11 +59,15 @@ def analyze_email(text: str) -> dict:
             "suggested_response": "O cliente OpenAI não foi inicializado corretamente. Verifique a chave de API."
         }
 
-    # O "prompt" é a nossa instrução detalhada para a IA.
+    # PROMPT FINAL: Focado em Ação Obrigatória e Resposta Externa
     prompt = f"""
     Analise o conteúdo do seguinte email e retorne um objeto JSON com duas chaves:
-    1. "category": classifique o email como "Produtivo" ou "Improdutivo". Emails que exigem uma ação, resposta ou contêm informações importantes são produtivos. E-mails de cortesia, agradecimentos simples ou spam são improdutivos.
-    2. "suggested_response": sugira uma resposta curta e profissional em português, apropriada para a categoria.
+    1. "category": classifique o email estritamente como "Produtivo" ou "Improdutivo", seguindo as regras abaixo:
+
+    * Produtivo: Emails que exigem uma **ação obrigatória**, **resposta específica** ou **mudança de status** para avançar um processo de negócio (ex: solicitações de suporte, aprovações, dúvidas sobre o sistema, status de ticket, requisições de credenciais).
+    * Improdutivo: Emails que **não necessitam de ação** ou **resposta imediata**. Inclui: mensagens de cortesia, agradecimentos simples, **compartilhamento de informações/artigos (FYI)** e spam.
+
+    2. "suggested_response": sugira uma **resposta curta, profissional e direcionada ao remetente original** do email, indicando **qual será o próximo passo da nossa equipe** para resolver a questão.
 
     Email para análise:
     ---
@@ -56,32 +75,60 @@ def analyze_email(text: str) -> dict:
     ---
     """
 
+    # SYSTEM ROLE CORRIGIDO: Assume o papel de assistente de comunicação com o CLIENTE
+    messages_list: list[ChatCompletionMessageParam] = [
+        {"role": "system",
+         "content": "Você é um assistente eficiente que analisa emails e retorna respostas em formato JSON. Suas respostas sugeridas devem ser **formais, profissionais e sempre direcionadas ao remetente original**, comunicando os próximos passos de forma clara."},
+        {"role": "user", "content": prompt}
+    ]
+
+    response_format_json = {"type": "json_object"}
+
     try:
         logging.info("Enviando requisição para a API da OpenAI...")
+
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",  # Modelo rápido e eficiente
-            messages=[
-                {"role": "system",
-                 "content": "Você é um assistente eficiente que analisa emails e retorna respostas em formato JSON."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.2,  # Baixa temperatura para respostas mais diretas
-            response_format={"type": "json_object"}  # Garante que a resposta será um JSON
+            model="gpt-3.5-turbo",
+            messages=messages_list,
+            temperature=0.2,
+            response_format=response_format_json
         )
 
-        json_response = json.loads(response.choices[0].message.content)
-        logging.info("Resposta recebida e processada com sucesso.")
+        json_string = response.choices[0].message.content
+
+        # Validação Pydantic
+        analysis_data = AnalysisResponse.model_validate_json(json_string)
+        logging.info("Resposta validada com sucesso via Pydantic.")
 
         return {
-            "category": json_response.get("category", "Indeterminado"),
-            "suggested_response": json_response.get("suggested_response", "Nenhuma sugestão gerada.")
+            "category": analysis_data.category,
+            "suggested_response": analysis_data.suggested_response
         }
 
-    except Exception as e:
-        logging.error(f"Erro ao chamar a API da OpenAI: {e}")
+    # Tratamento de Exceções Específicas
+    except APIError as e:
+        logging.error(f"Erro na API da OpenAI: {e}")
         return {
-            "category": "Erro",
-            "suggested_response": "Houve um problema ao se comunicar com a API. Tente novamente."
+            "category": "Erro de Serviço",
+            "suggested_response": "Erro de autenticação ou configuração na API de IA. Contate o suporte técnico."
+        }
+    except RateLimitError:
+        logging.error("Erro de Rate Limit.")
+        return {
+            "category": "Erro de Serviço",
+            "suggested_response": "A API está sobrecarregada ou excedeu o limite de requisições. Tente novamente mais tarde."
+        }
+    except (ValidationError, json.JSONDecodeError) as e:
+        logging.error(f"Erro de validação Pydantic ou JSON: {e}")
+        return {
+            "category": "Erro Inesperado",
+            "suggested_response": "A IA não conseguiu retornar uma resposta no formato esperado. Tente refinar o email de entrada."
+        }
+    except Exception as e:
+        logging.error(f"Erro inesperado durante a análise: {e}")
+        return {
+            "category": "Erro Inesperado",
+            "suggested_response": "Ocorreu um erro inesperado ao analisar o email. Verifique o log para detalhes."
         }
 
 
