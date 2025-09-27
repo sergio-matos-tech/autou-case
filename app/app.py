@@ -9,6 +9,11 @@ app = Flask(__name__)
 # Permite nomes de arquivo com extensões .txt e .pdf
 ALLOWED_EXTENSIONS = {'txt', 'pdf'}
 
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB
+
+@app.errorhandler(413)
+def file_size_too_large(e):
+    return jsonify({"error": "Arquivo muito grande. O tamanho máximo permitido é de 5 MB."}), 413
 
 def allowed_file(filename):
     return '.' in filename and \
