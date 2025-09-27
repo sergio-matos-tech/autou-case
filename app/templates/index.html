@@ -7,34 +7,65 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <main>
+    <div class="container">
         <header>
             <h1>AutoU 🚀</h1>
             <p>Classificador Inteligente de Emails</p>
         </header>
 
-        <form id="analysis-form">
-            <label for="email-text">Cole o texto do email abaixo:</label>
-            <textarea id="email-text" rows="10" placeholder="Ex: Olá, gostaria de saber o status do meu pedido..."></textarea>
+        <main id="app-main">
+            <section id="input-section" class="card">
+                <form id="analysis-form">
+                    <div class="input-group">
+                        <label for="email-text">Cole o texto do email</label>
+                        <textarea id="email-text" name="email_text" rows="8" placeholder="Digite ou cole o texto aqui..."></textarea>
+                    </div>
 
-            <button type="submit">Analisar Email</button>
-        </form>
+                    <div class="separator">ou</div>
 
-        <section id="results-container" class="hidden">
-            <h2>Resultado da Análise</h2>
-            <div class="result-item">
-                <h3>Categoria:</h3>
-                <p id="result-category"></p>
-            </div>
-            <div class="result-item">
-                <h3>Resposta Sugerida:</h3>
-                <p id="result-response"></p>
-            </div>
-        </section>
+                    <div class="input-group">
+                        <label for="email-file">Envie um arquivo (.txt ou .pdf)</label>
+                        <div class="file-drop-area">
+                            <div class="file-loader hidden">
+                                <div class="spinner-small"></div>
+                                <span>Carregando arquivo...</span>
+                            </div>
+                            <span class="file-msg">Arraste e solte o arquivo aqui, ou clique para selecionar</span>
+                            <input type="file" id="email-file" name="email_file" accept=".txt,.pdf">
+                        </div>
+                    </div>
 
-        <div id="loader" class="hidden"></div>
-    </main>
+                    <button id="submit-button" type="submit" disabled>Analisar</button>
+                </form>
+            </section>
 
+            <section id="output-section" class="card hidden">
+                <div id="loader">
+                    <div class="spinner"></div>
+                    <p>Analisando...</p>
+                </div>
+
+                <div id="error-container" class="hidden">
+                    <h3>❌ Erro na Análise</h3>
+                    <p id="error-message"></p>
+                    <button id="try-again-button">Tentar Novamente</button>
+                </div>
+
+                <div id="results-container" class="hidden">
+                    <h3>✅ Resultado da Análise</h3>
+                    <div class="result-item">
+                        <h4>Categoria:</h4>
+                        <p id="result-category"></p>
+                    </div>
+                    <div class="result-item">
+                        <h4>Resposta Sugerida:</h4>
+                        <p id="result-response"></p>
+                    </div>
+                    <button id="analyze-new-button">Analisar Outro Email</button>
+                </div>
+            </section>
+        </main>
+    </div>
     <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
 </body>
 </html>

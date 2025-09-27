@@ -1,87 +1,215 @@
-/* Estilos gerais */
+/* Importação de fonte e variáveis */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+:root {
+    --primary-color: #5e72e4;
+    --light-primary-color: #825ee4;
+    --background-color: #f4f7f9;
+    --card-background: #ffffff;
+    --text-color: #333;
+    --subtle-text-color: #7a7a7a;
+    --border-color: #e3e6f0;
+    --success-color: #2dce89;
+    --error-color: #f5365c;
+}
+
+/* Reset e Estilos Globais */
+* {
+    box-sizing: border-box;
+}
+
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    background-color: #f4f7f9;
-    color: #333;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
     margin: 0;
     padding: 20px;
 }
 
-main {
-    background-color: #fff;
-    padding: 30px 40px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 600px;
+.container {
+    max-width: 700px;
+    margin: 40px auto;
+}
+
+header {
     text-align: center;
+    margin-bottom: 30px;
 }
 
 header h1 {
-    color: #4a4a4a;
-    margin-bottom: 5px;
+    margin: 0;
 }
 
 header p {
-    color: #7a7a7a;
-    margin-top: 0;
+    color: var(--subtle-text-color);
+    margin-top: 5px;
 }
 
-/* Formulário */
-form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-top: 30px;
+.card {
+    background-color: var(--card-background);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+/* Formulário de Entrada */
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
 }
 
 textarea {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
+    padding: 12px;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     font-size: 16px;
+    font-family: inherit;
     resize: vertical;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(94, 114, 228, 0.2);
+}
+
+textarea:disabled {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+}
+
+.separator {
+    text-align: center;
+    color: var(--subtle-text-color);
+    margin: 20px 0;
+    font-weight: 500;
+}
+
+.file-drop-area {
+    position: relative;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.file-drop-area:hover, .file-drop-area.highlight {
+    border-color: var(--primary-color);
+    background-color: #fbfaff;
+}
+
+.file-drop-area.disabled {
+    cursor: not-allowed;
+    background-color: #f8f9fa;
+    border-color: var(--border-color);
+}
+
+.file-drop-area .file-msg {
+    color: var(--subtle-text-color);
+}
+
+.file-drop-area input[type="file"] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.file-drop-area input[type="file"]:disabled {
+    cursor: not-allowed;
 }
 
 button {
-    padding: 12px 20px;
-    background: linear-gradient(90deg, #5e72e4, #825ee4);
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(90deg, var(--primary-color), var(--light-primary-color));
     color: #fff;
     border: none;
     border-radius: 8px;
     font-size: 16px;
+    font-weight: 700;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-top: 10px;
 }
 
 button:hover {
     transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Resultados */
-#results-container {
-    margin-top: 40px;
-    text-align: left;
-    border-top: 1px solid #eee;
-    padding-top: 20px;
+button:disabled {
+    background: #c0c8e0;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
-.result-item h3 {
+/* Seção de Saída */
+#output-section h3 {
+    text-align: center;
+    margin-top: 0;
+    font-size: 20px;
+}
+
+#output-section #results-container h3 {
+    color: var(--success-color);
+}
+
+#output-section #error-container h3 {
+    color: var(--error-color);
+}
+
+.result-item {
+    margin-bottom: 20px;
+}
+
+.result-item h4 {
     margin-bottom: 5px;
-    color: #5e72e4;
+    color: var(--primary-color);
 }
 
 .result-item p {
     margin-top: 0;
-    background-color: #f9f9f9;
-    padding: 10px;
+    background-color: #f8f9fa;
+    padding: 15px;
     border-radius: 6px;
-    white-space: pre-wrap; /* Mantém as quebras de linha da resposta */
+    white-space: pre-wrap;
+    border-left: 3px solid var(--primary-color);
+}
+
+/* Loader */
+#loader {
+    text-align: center;
+    padding: 40px 0;
+}
+
+.spinner {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid var(--primary-color);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 /* Utilitários */
@@ -89,18 +217,16 @@ button:hover {
     display: none;
 }
 
-/* Spinner de Carregamento */
-#loader {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #5e72e4;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin: 40px auto;
+/* No final de app/static/css/style.css */
+
+/* Loader específico para o upload de arquivo */
+/* garante que o file-loader realmente fique escondido quando tiver a classe .hidden */
+.file-loader.hidden {
+    display: none;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+/* opcional: pause a animação para evitar consumo quando escondido */
+.file-loader.hidden .spinner-small,
+.file-loader.hidden .spinner {
+    animation-play-state: paused;
 }
