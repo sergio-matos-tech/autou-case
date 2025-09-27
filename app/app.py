@@ -1,4 +1,5 @@
 import os
+import re  # Módulo adicionado para Expressões Regulares (NLP)
 from flask import Flask, request, jsonify, render_template
 from app.services.email_analyzer import analyze_email
 import fitz  # A biblioteca PyMuPDF é importada como 'fitz'
@@ -12,6 +13,22 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf'}
 def allowed_file(filename):
     return '.' in filename and \
         filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def preprocess_text(text: str) -> str:
+    """
+    Realiza pré-processamento clássico para padronizar o texto antes de enviar para a IA.
+    1. Converte para minúsculas.
+    2. Remove pontuações e caracteres especiais, mantendo letras, números e espaços.
+    """
+    # 1. Converte para minúsculas
+    text = text.lower()
+    # 2. Remove pontuações e caracteres especiais
+    # Mantém apenas caracteres alfanuméricos e espaços
+    text = re.sub(r'[^\w\s]', '', text)
+    # 3. Normaliza espaços (remove múltiplos espaços) e retira bordas
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
 
 
 @app.route('/')
@@ -30,7 +47,7 @@ def analyze():
         if file and file.filename != '' and allowed_file(file.filename):
             try:
                 if file.filename.lower().endswith('.pdf'):
-                    # Processa o PDF
+                    # Processa o PDF usando PyMuPDF (fitz)
                     doc = fitz.open(stream=file.read(), filetype="pdf")
                     for page in doc:
                         email_text += page.get_text()
@@ -43,20 +60,30 @@ def analyze():
 
     # 2. Se nenhum arquivo válido foi processado, usa o texto do formulário
     if not email_text:
-        # Para multipart/form-data, os dados de texto vêm em request.form
+        # CORREÇÃO: Usa 'email_text' que é o nome correto do campo no HTML
         email_text = request.form.get('email_text', '')
 
     # 3. Validação final
     if not email_text.strip():
         return jsonify({"error": "Nenhum arquivo válido ou texto foi fornecido."}), 400
 
-    # 4. Chama o serviço de IA
+    # 4. PRÉ-PROCESSAMENTO: Aplica as técnicas clássicas de NLP antes da IA
+    processed_text = preprocess_text(email_text)
+
+    # 5. Chama o serviço de IA
     try:
-        analysis_result = analyze_email(email_text)
+        # Passa o texto pré-processado
+        analysis_result = analyze_email(processed_text)
         return jsonify(analysis_result), 200
     except Exception as e:
+        # Erro interno na chamada da API de IA
         return jsonify({"error": "Ocorreu um erro interno ao processar a solicitação."}), 500
 
 
 if __name__ == '__main__':
+    # Teste rápido da função de pré-processamento
+    test_text = "Subject: Urgent Issue! 1. The price is $100."
+    print(f"Texto original: {test_text}")
+    print(f"Texto processado: {preprocess_text(test_text)}")
+
     app.run(debug=True)
