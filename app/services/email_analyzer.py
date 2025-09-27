@@ -25,6 +25,7 @@ except Exception as e:
     logging.error(f"Erro ao inicializar o cliente OpenAI: {e}")
     client = None
 
+
 # --- FUNÇÃO PRINCIPAL DO SERVIÇO ---
 
 def analyze_email(text: str) -> dict:
@@ -60,16 +61,17 @@ def analyze_email(text: str) -> dict:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",  # Modelo rápido e eficiente
             messages=[
-                {"role": "system", "content": "Você é um assistente eficiente que analisa emails e retorna respostas em formato JSON."},
+                {"role": "system",
+                 "content": "Você é um assistente eficiente que analisa emails e retorna respostas em formato JSON."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.2, # Baixa temperatura para respostas mais diretas
-            response_format={"type": "json_object"} # Garante que a resposta será um JSON
+            temperature=0.2,  # Baixa temperatura para respostas mais diretas
+            response_format={"type": "json_object"}  # Garante que a resposta será um JSON
         )
-        
+
         json_response = json.loads(response.choices[0].message.content)
         logging.info("Resposta recebida e processada com sucesso.")
-        
+
         return {
             "category": json_response.get("category", "Indeterminado"),
             "suggested_response": json_response.get("suggested_response", "Nenhuma sugestão gerada.")
@@ -82,13 +84,14 @@ def analyze_email(text: str) -> dict:
             "suggested_response": "Houve um problema ao se comunicar com a API. Tente novamente."
         }
 
+
 # --- BLOCO DE TESTE ISOLADO ---
 if __name__ == '__main__':
     print("\n--- INICIANDO TESTE DO SERVIÇO DE ANÁLISE (OpenAI) ---")
 
     email_produtivo = "Olá, prezados. Gostaria de saber se há alguma atualização sobre o ticket de suporte #54321. O problema com o login ainda persiste. Agradeço a atenção."
     email_improdutivo = "Oi pessoal, só passando para desejar um ótimo final de semana a todos!"
-    
+
     print("\n[TESTE 1: Email Produtivo]")
     analise1 = analyze_email(email_produtivo)
     print(f"Categoria: {analise1['category']}")
