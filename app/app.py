@@ -49,15 +49,18 @@ def analyze():
     if 'email_file' in request.files:
         file = request.files['email_file']
 
-        if file and file.filename != '' and allowed_file(file.filename):
+        if file and file.filename and file.filename != '' and allowed_file(file.filename):
             try:
-                if file.filename.lower().endswith('.pdf'):
+                filename_lower = file.filename.lower() if file.filename else ''
+                if filename_lower.endswith('.pdf'):
                     # Processa o PDF usando PyMuPDF (fitz)
                     doc = fitz.open(stream=file.read(), filetype="pdf")
                     for page in doc:
-                        email_text += page.get_text()
+                        # Garante que page é do tipo fitz.Page
+                        if hasattr(page, 'get_text'):
+                            email_text += page.get_text()  # type: ignore
                     doc.close()
-                elif file.filename.lower().endswith('.txt'):
+                elif filename_lower.endswith('.txt'):
                     # Processa o TXT
                     email_text = file.read().decode('utf-8')
             except Exception as e:
