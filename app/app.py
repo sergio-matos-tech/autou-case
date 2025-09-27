@@ -44,7 +44,7 @@ def analyze():
     # 2. Se nenhum arquivo válido foi processado, usa o texto do formulário
     if not email_text:
         # Para multipart/form-data, os dados de texto vêm em request.form
-        email_text = request.form.get('text', '')
+        email_text = request.form.get('email_text', '')
 
     # 3. Validação final
     if not email_text.strip():
