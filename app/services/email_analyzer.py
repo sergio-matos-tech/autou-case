@@ -62,8 +62,8 @@ def analyze_email(text: str) -> dict:
     * Improdutivo: Emails que **não necessitam de ação** ou **resposta imediata**. Inclui: mensagens de cortesia, parabéns, agradecimentos simples, **compartilhamento de informações/artigos (FYI)** e spam.
 
     2. "suggested_response":
-    - Se o email for "Produtivo", sugira uma resposta curta, profissional e direcionada ao remetente original, indicando qual será o próximo passo da nossa equipe para resolver a questão. Sempre assine como "Equipe AutoU" ou "Equipe de Suporte AutoU".
-    - Se o email for "Improdutivo" (ex: parabéns, cortesia, FYI, agradecimento), responda de forma cordial e sucinta, informando que não é necessária ação adicional ou que a mensagem foi recebida, evitando agradecimentos extensos ou respostas desnecessárias. Sempre assine como "Equipe AutoU" ou "Equipe de Suporte AutoU".
+    - Se o email for "Produtivo", sugira uma resposta curta, profissional e direcionada ao remetente original, indicando qual será o próximo passo da nossa equipe para resolver a questão. Sempre assine como "Equipe AutoU" ou "Equipe de Suporte AutoU". Não use o nome do remetente na resposta.
+    - Se o email for "Improdutivo" (ex: parabéns, cortesia, FYI, agradecimento), responda de forma cordial e sucinta, informando que não é necessária ação adicional ou que a mensagem foi recebida, evitando agradecimentos extensos ou respostas desnecessárias. Sempre assine como "Equipe AutoU" ou "Equipe de Suporte AutoU". Não use o nome do remetente na resposta.
 
     Email para análise:
     ---
