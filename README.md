@@ -56,9 +56,21 @@ The application analyzes email content—whether pasted directly into the UI or 
 
 ![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge\&logo=openai\&logoColor=white)
 
-### Deployment
-
+### ☁️ Deployment
 ![Render](https://img.shields.io/badge/Render-46E3B7?style=for-the-badge\&logo=render\&logoColor=white)
+<br>
+This application is deployed on Render and is configured for continuous deployment. Any push to the main branch will automatically trigger a new build and deployment.
+
+The build process installs dependencies from requirements.txt, and a Gunicorn production server is used to serve the Flask application.
+
+👨‍💻 Author
+Developed by Sergio Matos.
+
+LinkedIn: https://www.linkedin.com/in/sergio-matos-tech/
+
+GitHub: https://github.com/sergio-matos-tech
+
+
 
 ---
 
